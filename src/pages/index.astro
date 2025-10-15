@@ -3,12 +3,20 @@ import PlotFigure from "../components/PlotFigure.astro";
 import Layout from "../layouts/Layout.astro";
 import * as Plot from "@observablehq/plot";
 import penguins from "../assets/penguins.json";
+
+import "leaflet/dist/leaflet.css";
+import listeEtablissements from "../assets/listeEtablissements.json";
 ---
 
 <Layout>
-  <h1 class="text-2xl">Test Astro et Plot (Observablehq)</h1>
+  <h1 class="text-2xl mb-6">Test Astro et Plot (Observablehq)</h1>
+
   <PlotFigure
     options={{
+      title: "Diagramme de test pour l'accessibilité",
+      subtitle: "Exemple avec Observable Plot et Astro",
+      caption: "Figure 1 : Nuage de points des pingouins selon longueur et profondeur du bec.",
+      ariaLabel: "Graphique présentant un nuage de points avec trois espèces de pingouins différenciées par couleur",
       marks: [
         Plot.dot(penguins, {
           x: "culmen_length_mm",
@@ -18,4 +26,39 @@ import penguins from "../assets/penguins.json";
       ],
     }}
   />
+
+  <h2 class="text-2xl mt-10 mb-4">Carte des établissements universitaires</h2>
+<div id="map" style="height: 600px; border-radius: 12px; overflow: hidden;"></div>
+
+<script>
+  import L from "leaflet";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const map = L.map("map").setView([46.6033, 1.883], 6);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18,
+    }).addTo(map);
+
+    if (Array.isArray(listeEtablissements)) {
+      listeEtablissements.forEach(({ name, lat, lon }) => {
+        if (lat && lon) {
+          L.circleMarker([lat, lon], {
+            radius: 8,         
+            fillColor: "#FF5722", 
+            color: "#FF5722",   
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+          })
+          .addTo(map)
+          .bindPopup(`<b>${name || "Établissement"}</b>`);
+        }
+      });
+    } else {
+      console.error("Le fichier listeEtablissements.json n'est pas un tableau valide.");
+    }
+  });
+</script>
 </Layout>

@@ -1,0 +1,107 @@
+---
+import * as Plot from "@observablehq/plot";
+import PlotFigure from "../components/PlotFigure.astro";
+import departements from "../assets/departements.geojson.json";
+import populationMain from "../assets/populationMain.json";
+
+const listePeriode = [...new Set(populationMain.map((d) => d.Période))].sort((a, b) => b - a);
+const listeSexe = [...new Set(populationMain.map((d) => d.Sexe))];
+const listeAge = [...new Set(populationMain.map((d) => d["Âge"]))];
+
+let selectedYear = Number(listePeriode[0]);
+let selectedSex = listeSexe[0];
+let selectedAge = listeAge[0];
+
+const optionPlot = {
+  projection: {
+    type: "mercator",
+    domain: departements,
+  },
+  color: {
+    type: "quantile",
+    n: 8,
+    scheme: "Greens",
+    label: "Population en centaine de milliers",
+    legend: true,
+    transform: (d) => Math.round(d / 100000),
+  },
+  marks: [
+    Plot.geo(departements, {
+      fill: (d) => {
+        const deptName = d.properties.nom;
+        const popData = populationMain.find(
+          (p) =>
+            p.Géographie === deptName &&
+            p.Période === selectedYear &&
+            p.Sexe === selectedSex &&
+            p["Âge"] === selectedAge
+        );
+        return popData ? popData.Valeur : 0;
+      },
+      stroke: "#999",
+      title: (d) => {
+        const deptName = d.properties.nom;
+        const popData = populationMain.find(
+          (p) =>
+            p.Géographie === deptName &&
+            p.Période === selectedYear &&
+            p.Sexe === selectedSex &&
+            p["Âge"] === selectedAge
+        );
+        return popData ? `${deptName} : ${popData.Valeur}` : `${deptName} : N/A`;
+      },
+      tip: true,
+    }),
+  ],
+};
+---
+
+<div style="margin-bottom: 20px;">
+  <label for="periode">Année :</label>
+  <select id="periode">
+    {listePeriode.map((p, i) => (
+      <option value={p} selected={i === 0}>{p}</option>
+    ))}
+  </select>
+
+  <label for="sex" style="margin-left: 20px;">Sexe :</label>
+  <select id="sex">
+    {listeSexe.map((s, i) => (
+      <option value={s} selected={i === 0}>{s}</option>
+    ))}
+  </select>
+
+  <label for="age" style="margin-left: 20px;">Âge :</label>
+  <select id="age">
+    {listeAge.map((a, i) => (
+      <option value={a} selected={i === 0}>{a}</option>
+    ))}
+  </select>
+</div>
+
+<PlotFigure id="map-figure" options={optionPlot} />
+
+<script>
+  const elmYear = document.getElementById("periode");
+  const elmSex = document.getElementById("sex");
+  const elmAge = document.getElementById("age");
+  const plotContainer = document.getElementById("map-figure");
+
+  let selectedYear = Number(elmYear.value);
+  let selectedSex = elmSex.value;
+  let selectedAge = elmAge.value;
+
+  elmYear.addEventListener("change", () => {
+    selectedYear = Number(elmYear.value);
+    updateMap();
+  });
+  elmSex.addEventListener("change", () => {
+    selectedSex = elmSex.value;
+    updateMap();
+  });
+  elmAge.addEventListener("change", () => {
+    selectedAge = elmAge.value;
+    updateMap();
+  });
+</script>
+
